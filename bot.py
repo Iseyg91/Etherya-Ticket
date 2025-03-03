@@ -6,8 +6,7 @@ from keep_alive import keep_alive
 
 token = os.environ['ETHERYA']
 
-intents = discord.Intents.default()
-intents.message_content = True
+intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix="+", intents=intents)
 
