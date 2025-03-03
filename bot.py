@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import os
+from keep_alive import keep_alive
 
 token = os.environ['ETHERYA']
 
@@ -224,4 +225,5 @@ async def on_ready():
     print(f'Bot connecté en tant que {bot.user}')
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement
+keep_alive()
 bot.run(token)
