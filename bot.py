@@ -3,7 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 import os
 
-token = os.environ['Etherya']
+token = os.environ['ETHERYA']
 
 intents = discord.Intents.default()
 intents.message_content = True
