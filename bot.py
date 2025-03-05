@@ -2,12 +2,18 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import os
+import random
+import asyncio
 from keep_alive import keep_alive
+from discord.ui import Button, View
+from discord.ui import View, Select
 
 token = os.environ['ETHERYA']
-
-intents = discord.Intents.all()
-
+intents = discord.Intents.default()
+intents.message_content = True
+intents.messages = True 
+intents.members = True
+intents.guilds = True
 bot = commands.Bot(command_prefix="+", intents=intents)
 
 # IDs des rôles et de la catégorie
@@ -216,24 +222,6 @@ async def transfer(interaction: discord.Interaction, member: discord.Member):
     staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
     await ticket_channel.set_permissions(member, view_channel=True)
     await interaction.response.send_message(embed=embed_transfer)  # Assure que c'est le seul message envoyé pour le transfert
-
-import discord
-from discord.ext import commands
-from discord import app_commands
-import os
-import random
-import asyncio
-from keep_alive import keep_alive
-from discord.ui import Button, View
-from discord.ui import View, Select
-
-token = os.environ['ETHERYA']
-intents = discord.Intents.default()
-intents.message_content = True
-intents.messages = True 
-intents.members = True
-intents.guilds = True
-bot = commands.Bot(command_prefix="+", intents=intents)
 
 OWNER_ID = 792755123587645461
 
