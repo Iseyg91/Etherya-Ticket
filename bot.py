@@ -225,11 +225,6 @@ async def transfer(interaction: discord.Interaction, member: discord.Member):
 
 OWNER_ID = 792755123587645461
 
-@bot.event
-async def on_ready():
-    print(f"Connecté en tant que {bot.user}")
-    print(f"Commandes chargées: {list(bot.commands)}")  # Affiche les commandes disponibles
-
     guild = message.guild
     member = guild.get_member(message.author.id)
 
