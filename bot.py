@@ -214,7 +214,7 @@ async def guide_command(interaction: discord.Interaction):
     user = interaction.user
 
     # Crée un nouveau thread privé à chaque commande
-    channel_id = 1347184378660261969
+    channel_id = 1342179655263977492
     channel = bot.get_channel(channel_id)
 
     if not channel:
