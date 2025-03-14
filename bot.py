@@ -495,7 +495,7 @@ class Calcul(commands.Cog):
 @app_commands.describe(operation="Opération à effectuer (addition, soustraction, multiplication, division)",
                            nombre1="Premier nombre",
                            nombre2="Deuxième nombre")
-    async def calcul(self, interaction: discord.Interaction, operation: str, nombre1: float, nombre2: float):
+async def calcul(self, interaction: discord.Interaction, operation: str, nombre1: float, nombre2: float):
         operation = operation.lower()
         
         if operation == "addition":
