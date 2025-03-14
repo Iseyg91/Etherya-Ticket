@@ -152,6 +152,7 @@ async def send_economy_info(user: discord.Member):
                     title="📌 **Lis ces salons pour optimiser tes gains !**",
                     description=(
                         "Bienvenue dans l'économie du serveur ! Pour en tirer le meilleur profit, assure-toi de lire ces salons :\n\n"
+                        "💰 **Comment accéder à l'economie ?**\n➜ <#1344418391544303627>\n\n"
                         "📖 **Informations générales**\n➜ <#1340402373708746802>\n\n"
                         "💰 **Comment gagner des Coins ?**\n➜ <#1340402729272737926>\n\n"
                         "🏦 **Banque de l'Éco 1**\n➜ <#1340403431923519489>\n\n"
