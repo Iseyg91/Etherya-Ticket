@@ -42,6 +42,8 @@ async def on_message(message):
     ignored_role_id = 1170326040485318686
     if any(role.id == ignored_role_id for role in member.roles):
         return
+
+
 private_threads = {}  # Stocke les fils privés des nouveaux membres
 
 class GuideView(View):
