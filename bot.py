@@ -16,24 +16,6 @@ intents.members = True
 intents.guilds = True
 bot = commands.Bot(command_prefix="+", intents=intents)
 
-import discord
-from discord.ext import commands
-from discord import app_commands
-import os
-import random
-import asyncio
-from keep_alive import keep_alive
-from discord.ui import Button, View
-from discord.ui import View, Select
-
-token = os.environ['ETHERYA']
-intents = discord.Intents.default()
-intents.message_content = True
-intents.messages = True 
-intents.members = True
-intents.guilds = True
-bot = commands.Bot(command_prefix="+", intents=intents)
-
 OWNER_ID = 792755123587645461
 STAFF_ROLE_ID = 1244339296706760726
 
@@ -293,6 +275,42 @@ async def transfer(interaction: discord.Interaction, member: discord.Member):
     await ticket_channel.set_permissions(member, view_channel=True)
     await interaction.response.send_message(embed=embed_transfer)  # Assure que c'est le seul message envoyé pour le transfert
 
+#------------------------------------------------------------------------- Commandes de Calcul : /calcul
+
+class Calcul(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+@app_commands.command(name="calcul", description="Effectue une opération mathématique entre deux nombres.")
+@app_commands.describe(operation="Opération à effectuer (addition, soustraction, multiplication, division)",
+                           nombre1="Premier nombre",
+                           nombre2="Deuxième nombre")
+    async def calcul(self, interaction: discord.Interaction, operation: str, nombre1: float, nombre2: float):
+        operation = operation.lower()
+        
+        if operation == "addition":
+            resultat = nombre1 + nombre2
+            symbole = "+"
+        elif operation == "soustraction":
+            resultat = nombre1 - nombre2
+            symbole = "-"
+        elif operation == "multiplication":
+            resultat = nombre1 * nombre2
+            symbole = "×"
+        elif operation == "division":
+            if nombre2 == 0:
+                await interaction.response.send_message("Erreur : Division par zéro impossible !", ephemeral=True)
+                return
+            resultat = nombre1 / nombre2
+            symbole = "÷"
+        else:
+            await interaction.response.send_message("Erreur : Opération invalide. Utilisez 'addition', 'soustraction', 'multiplication' ou 'division'.", ephemeral=True)
+            return
+        
+        await interaction.response.send_message(f"{nombre1} {symbole} {nombre2} = {resultat}")
+
+async def setup(bot):
+    await bot.add_cog(Calcul(bot))
 
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement
