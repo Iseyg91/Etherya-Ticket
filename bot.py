@@ -19,16 +19,21 @@ bot = commands.Bot(command_prefix="+", intents=intents)
 OWNER_ID = 792755123587645461
 STAFF_ROLE_ID = 1244339296706760726
 
-# Lorsque le bot est prêt
 @bot.event
 async def on_ready():
-    print(f"{bot.user} est connecté et prêt ! ✅")
-    await bot.tree.sync()
+    print(f"✅ Le bot est connecté en tant que {bot.user} (ID: {bot.user.id})")
 
-@bot.event
-async def on_ready():
-    print(f"Connecté en tant que {bot.user}")
-    print(f"Commandes chargées: {list(bot.commands)}")  # Affiche les commandes disponibles
+    # Afficher les commandes chargées
+    print("📌 Commandes disponibles :")
+    for command in bot.commands:
+        print(f"- {command.name}")
+
+    try:
+        # Synchroniser les commandes avec Discord
+        synced = await bot.tree.sync()  # Synchronisation des commandes slash
+        print(f"✅ Commandes slash synchronisées : {[cmd.name for cmd in synced]}")
+    except Exception as e:
+        print(f"❌ Erreur de synchronisation des commandes slash : {e}")
 
 @bot.event
 async def on_message(message):
