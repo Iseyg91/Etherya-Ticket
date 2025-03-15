@@ -52,6 +52,30 @@ async def on_message(message):
     if any(role.id == ignored_role_id for role in member.roles):
         return
 
+    # Vérifier si le message mentionne l'Owner
+    if f"<@{OWNER_ID}>" in message.content:
+        embed = discord.Embed(
+            title="🔹 Hey, besoin d'aide ?",  
+            description=(f"Salut {message.author.mention}, merci d’éviter de mentionner le Owner inutilement.\n\n"
+                         "👥 **L'équipe d'administration est là pour répondre à tes questions et t’aider !**\n"
+                         "📩 **Besoin d'aide ? Clique sur le bouton ci-dessous ou va dans <#1166093151589634078>.**"),
+            color=0x00aaff  # Bleu cyan chill
+        )
+        embed.set_image(url="https://raw.githubusercontent.com/Cass64/EtheryaBot/refs/heads/main/images_etherya/etheryaBot_banniere.png") 
+        if bot.user.avatar:
+            embed.set_thumbnail(url=bot.user.avatar.url) 
+        embed.add_field(name="❓ Pourquoi éviter de mentionner le Owner ?", 
+                        value="Le Owner est souvent occupé avec la gestion du serveur. Pour une réponse rapide et efficace, passe par le support ou un admin ! 🚀", 
+                        inline=False)
+        embed.set_footer(text="Merci de ta compréhension • L'équipe d'administration", icon_url=bot.user.avatar.url)
+
+        button = Button(label="📩 Ouvrir un ticket", style=discord.ButtonStyle.primary, url="https://discord.com/channels/1034007767050104892/1166093151589634078/1340663542335934488")
+        view = View()
+        view.add_item(button)
+        await message.channel.send(embed=embed, view=view)
+
+    # Permet au bot de continuer à traiter les commandes
+    await bot.process_commands(message)
 
 private_threads = {}  # Stocke les fils privés des nouveaux membres
 
@@ -264,31 +288,6 @@ async def guide_command(interaction: discord.Interaction):
     await thread.send(embed=guide_embed, view=GuideView(thread))  # Envoie le guide avec les boutons
 
     await interaction.response.send_message("📩 Ton guide personnalisé a été ouvert.", ephemeral=True)
-
-    # Vérifier si le message mentionne l'Owner
-    if f"<@{OWNER_ID}>" in message.content:
-        embed = discord.Embed(
-            title="🔹 Hey, besoin d'aide ?",  
-            description=(f"Salut {message.author.mention}, merci d’éviter de mentionner le Owner inutilement.\n\n"
-                         "👥 **L'équipe d'administration est là pour répondre à tes questions et t’aider !**\n"
-                         "📩 **Besoin d'aide ? Clique sur le bouton ci-dessous ou va dans <#1166093151589634078>.**"),
-            color=0x00aaff  # Bleu cyan chill
-        )
-        embed.set_image(url="https://raw.githubusercontent.com/Cass64/EtheryaBot/refs/heads/main/images_etherya/etheryaBot_banniere.png") 
-        if bot.user.avatar:
-            embed.set_thumbnail(url=bot.user.avatar.url) 
-        embed.add_field(name="❓ Pourquoi éviter de mentionner le Owner ?", 
-                        value="Le Owner est souvent occupé avec la gestion du serveur. Pour une réponse rapide et efficace, passe par le support ou un admin ! 🚀", 
-                        inline=False)
-        embed.set_footer(text="Merci de ta compréhension • L'équipe d'administration", icon_url=bot.user.avatar.url)
-
-        button = Button(label="📩 Ouvrir un ticket", style=discord.ButtonStyle.primary, url="https://discord.com/channels/1034007767050104892/1166093151589634078/1340663542335934488")
-        view = View()
-        view.add_item(button)
-        await message.channel.send(embed=embed, view=view)
-
-    # Permet au bot de continuer à traiter les commandes
-    await bot.process_commands(message)
 
 # IDs des rôles et de la catégorie
 STAFF_ROLE_ID = 1165936153418006548
