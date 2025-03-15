@@ -115,9 +115,9 @@ async def start_tutorial(thread, user):
         description="Découvre encore plus de moyens de t'amuser et gagner des Ezryn Coins !",
         color=discord.Color.gold()
     )
-    games_embed.add_field(name="🪙 Pile ou Face", value="`!!cf` - Joue à pile ou face !", inline=False)
-    games_embed.add_field(name="🃏 Blackjack", value="`!!bj` - Affronte le croupier dans un Blackjack !", inline=False)
-    games_embed.add_field(name="💀 Smash", value="`!!sm` - Tente un jeu risqué !", inline=False)
+    games_embed.add_field(name="🐔 Cock-Fight", value="`!!cf` - Combat de Poulet !", inline=False)
+    games_embed.add_field(name="🃏 Blackjack", value="`!!bj` - Jeux de Carte !", inline=False)
+    games_embed.add_field(name="🎰 Slot Machine", value="`!!sm` - Tente un jeu risqué !", inline=False)
     games_embed.add_field(name="🔫 Roulette Russe", value="`!!rr` - Joue avec le destin !", inline=False)
     games_embed.add_field(name="🎡 Roulette", value="`!!roulette` - Fais tourner la roue de la fortune !", inline=False)
     games_embed.set_footer(text="Amuse-toi bien sur Etherya ! 🚀")
