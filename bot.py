@@ -473,41 +473,12 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
     except discord.HTTPException:
         await interaction.response.send_message("❌ Une erreur est survenue lors de l'envoi du message.", ephemeral=True)
 
-@bot.tree.command(name="transfer", description="Transférer un ticket à un autre staff")
-async def transfer(interaction: discord.Interaction, member: discord.Member):
-    # Vérifier si l'utilisateur a le rôle staff
-    if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
-        await interaction.response.send_message("❌ Vous n'avez pas la permission d'utiliser cette commande.", ephemeral=True)
-        return
-
-    # Vérifier que le membre spécifié est un staff
-    if STAFF_ROLE_ID not in [role.id for role in member.roles]:
-        await interaction.response.send_message("❌ Le membre spécifié n'est pas un staff.", ephemeral=True)
-        return
-
-    ticket_channel = interaction.channel
-    embed_transfer = discord.Embed(
-        title="Ticket transféré",
-        description=f"✅ Le ticket a été transféré à {member.mention} par {interaction.user.mention}.",
-        color=discord.Color.blue()
-    )
-
-    # Modifier les permissions du ticket pour permettre au nouveau staff de voir
-    staff_role = interaction.guild.get_role(STAFF_ROLE_ID)
-    await ticket_channel.set_permissions(member, view_channel=True)
-    await interaction.response.send_message(embed=embed_transfer)  # Assure que c'est le seul message envoyé pour le transfert
-
 @bot.tree.command(name="ticket_add", description="Ajouter un membre à un ticket")
 @app_commands.describe(member="Membre à ajouter au ticket")
 async def ticket_add(interaction: discord.Interaction, member: discord.Member):
-    # Vérifier que l'utilisateur a le rôle nécessaire
+    # Vérifier que l'utilisateur a le rôle staff
     if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
         await interaction.response.send_message("❌ Vous n'avez pas la permission d'utiliser cette commande.", ephemeral=True)
-        return
-
-    # Vérifier si le membre spécifié est un staff
-    if STAFF_ROLE_ID not in [role.id for role in member.roles]:
-        await interaction.response.send_message("❌ Le membre spécifié n'est pas un staff.", ephemeral=True)
         return
 
     ticket_channel = interaction.channel
@@ -527,7 +498,7 @@ async def ticket_add(interaction: discord.Interaction, member: discord.Member):
     )
 
     await interaction.response.send_message(embed=embed_added)  # Confirmer l'ajout
-
+    
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement
 keep_alive()
