@@ -23,8 +23,12 @@ STAFF_ROLE_ID = 1244339296706760726
 async def on_ready():
     print(f"✅ Le bot est connecté en tant que {bot.user} (ID: {bot.user.id})")
 
+    game = discord.Game("Joue à Etherya")
+    await bot.change_presence(status=discord.Status.online, activity=game)
+    print(f'{bot.user} est connecté !')
+
     # Afficher les commandes chargées
-    print("📌 Commandes disponibles :")
+    print("📌 Commandes disponibles 😊
     for command in bot.commands:
         print(f"- {command.name}")
 
