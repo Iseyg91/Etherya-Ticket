@@ -497,6 +497,37 @@ async def transfer(interaction: discord.Interaction, member: discord.Member):
     await ticket_channel.set_permissions(member, view_channel=True)
     await interaction.response.send_message(embed=embed_transfer)  # Assure que c'est le seul message envoyé pour le transfert
 
+@bot.tree.command(name="ticket_add", description="Ajouter un membre à un ticket")
+@app_commands.describe(member="Membre à ajouter au ticket")
+async def ticket_add(interaction: discord.Interaction, member: discord.Member):
+    # Vérifier que l'utilisateur a le rôle nécessaire
+    if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
+        await interaction.response.send_message("❌ Vous n'avez pas la permission d'utiliser cette commande.", ephemeral=True)
+        return
+
+    # Vérifier si le membre spécifié est un staff
+    if STAFF_ROLE_ID not in [role.id for role in member.roles]:
+        await interaction.response.send_message("❌ Le membre spécifié n'est pas un staff.", ephemeral=True)
+        return
+
+    ticket_channel = interaction.channel
+
+    # Vérifier que le canal est un ticket
+    if "ticket" not in ticket_channel.name:
+        await interaction.response.send_message("❌ Cette commande ne peut être utilisée que dans un ticket.", ephemeral=True)
+        return
+
+    # Modifier les permissions du ticket pour permettre au nouveau membre d'y accéder
+    await ticket_channel.set_permissions(member, view_channel=True)
+
+    embed_added = discord.Embed(
+        title="Membre ajouté au ticket",
+        description=f"✅ {member.mention} a été ajouté au ticket par {interaction.user.mention}.",
+        color=discord.Color.green()
+    )
+
+    await interaction.response.send_message(embed=embed_added)  # Confirmer l'ajout
+
 # Token pour démarrer le bot (à partir des secrets)
 # Lancer le bot avec ton token depuis l'environnement
 keep_alive()
