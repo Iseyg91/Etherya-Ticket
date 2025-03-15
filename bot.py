@@ -28,7 +28,7 @@ async def on_ready():
     print(f'{bot.user} est connecté !')
 
     # Afficher les commandes chargées
-    print("📌 Commandes disponibles 😊
+        print("📌 Commandes disponibles 😊
     for command in bot.commands:
         print(f"- {command.name}")
 
