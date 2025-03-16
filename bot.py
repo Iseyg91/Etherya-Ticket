@@ -485,31 +485,47 @@ async def close(interaction: discord.Interaction):
     reopen_button = discord.ui.Button(label="🔄 Réouvrir", style=discord.ButtonStyle.green)
     delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
     
-    async def delete_callback(interaction: discord.Interaction):
-        if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
-            await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
-            return
-        
-        await interaction.response.send_message("📝 Veuillez entrer la raison de la suppression du ticket :", ephemeral=True)
-        try:
-            delete_reason_msg = await bot.wait_for("message", check=check, timeout=60.0)
-            delete_reason = delete_reason_msg.content
-        except:
-            await interaction.followup.send("⏳ Temps écoulé. La suppression du ticket a été annulée.", ephemeral=True)
-            return
-        
-        log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
-        messages = await interaction.channel.history(limit=150).flatten()
-        logs_text = "\n".join([f"{m.author}: {m.content}" for m in messages])
+async def delete_callback(interaction: discord.Interaction):
+    if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
+        await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
+        return
+    
+    await interaction.response.send_message("📝 Veuillez entrer la raison de la suppression du ticket :", ephemeral=True)
+    try:
+        delete_reason_msg = await bot.wait_for("message", check=check, timeout=60.0)
+        delete_reason = delete_reason_msg.content
+    except:
+        await interaction.followup.send("⏳ Temps écoulé. La suppression du ticket a été annulée.", ephemeral=True)
+        return
+    
+    log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
+    messages = await interaction.channel.history(limit=150).flatten()
+    logs_text = "\n".join([f"{m.author}: {m.content}" for m in messages])
+    
+    # Informations à inclure dans l'embed
+    ticket_name = "X (Nom du Ticket)"  # Tu peux récupérer ça dynamiquement si besoin
+    opened_by = "@user"  # Remplacer par le véritable utilisateur qui a ouvert le ticket
+    closed_by = "@user"  # Remplacer par l'utilisateur qui a fermé le ticket
+    deleted_by = "@user"  # Remplacer par l'utilisateur qui a supprimé le ticket
+    creation_date = "Dates (JJ/MM/AA: Heure)"  # Ajouter la date de création du ticket
+    users = "\n".join([f"@{m.author}" for m in messages])  # Liste des utilisateurs qui ont parlé
 
-        embed_logs = discord.Embed(
-            title="Logs du Ticket",
-            description=f"📝 **Raison de suppression :** {delete_reason}\n📜 **150 derniers messages :**\n```\n{logs_text}\n```",
-            color=discord.Color.dark_gray()
-        )
-        
-        await log_channel.send(embed=embed_logs)
-        await interaction.channel.delete()
+    embed_logs = discord.Embed(
+        title="Logs du Ticket",
+        description=f"**[𝑺ץ] 𝑬𝒕𝒉𝒆𝒓𝒚𝒂**\n\n"
+                    f"🔒 **Ticket Fermé**\n"
+                    f"🆔 **Identifiant**\n{ticket_name}\n"
+                    f"✅ **Ouvert Par**\n{opened_by}\n"
+                    f"❌ **Fermé Par**\n{closed_by}\n"
+                    f"🗑️ **Supprimé Par**\n{deleted_by}\n"
+                    f"⏱️ **Date d'ouverture**\n{creation_date}\n\n"
+                    f"👥 **Utilisateurs**\n{users}\n\n"
+                    f"📜 **150 Derniers Messages :**\n```\n{logs_text}\n```",
+        color=discord.Color.dark_gray()
+    )
+    
+    await log_channel.send(embed=embed_logs)
+    await interaction.channel.delete()
     
     async def reopen_callback(interaction: discord.Interaction):
         if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
