@@ -475,11 +475,10 @@ async def close(interaction: discord.Interaction):
         log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
         messages = await interaction.channel.history(limit=150).flatten()
         logs_text = "\n".join([f"{m.author}: {m.content}" for m in messages])
-        
+
         embed_logs = discord.Embed(
             title="Logs du Ticket",
-            description=f"📝 **Raison de suppression :** {delete_reason}\n📜 **150 derniers messages :**\n```
-{logs_text}```",
+            description=f"📝 **Raison de suppression :** {delete_reason}\n📜 **150 derniers messages :**\n```\n{logs_text}\n```",
             color=discord.Color.dark_gray()
         )
         
