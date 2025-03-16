@@ -431,13 +431,13 @@ async def delete_callback(interaction: discord.Interaction):
             
     await interaction.response.send_modal(CloseTicketModal())
 
-        claim_button.callback = claim_callback
-        close_button.callback = close_callback
-        view_ticket.add_item(claim_button)
-        view_ticket.add_item(close_button)
+    claim_button.callback = claim_callback
+    close_button.callback = close_callback
+    view_ticket.add_item(claim_button)
+    view_ticket.add_item(close_button)
 
-        await ticket_channel.send(f"{interaction.user.mention} | {staff_role.mention}", embed=embed_ticket, view=view_ticket)
-        await interaction.response.send_message(f"✅ Ticket créé avec succès ! {ticket_channel.mention}", ephemeral=True)
+    await ticket_channel.send(f"{interaction.user.mention} | {staff_role.mention}", embed=embed_ticket, view=view_ticket)
+    await interaction.response.send_message(f"✅ Ticket créé avec succès ! {ticket_channel.mention}", ephemeral=True)
 
     button.callback = ticket_callback
     embed_panel = discord.Embed(
