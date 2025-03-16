@@ -425,46 +425,91 @@ class CloseTicketModal(discord.ui.Modal, title="Raison de la fermeture"):
         view.add_item(delete_button)
         await interaction.channel.send(embed=embed_closed, view=view)
 
-@bot.tree.command(name="close_ticket", description="Fermer un ticket")
-async def close_ticket(interaction: discord.Interaction):
+@bot.tree.command(name="close", description="Fermer un ticket")
+async def close(interaction: discord.Interaction):
+    # Vérifier que la commande est utilisée dans un ticket
+    if "ticket" not in interaction.channel.name:
+        await interaction.response.send_message("❌ Cette commande ne peut être utilisée que dans un ticket.", ephemeral=True)
+        return
+    
+    # Vérifier que l'utilisateur est staff
     if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
         await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
         return
     
-    modal = CloseTicketModal()
-    await interaction.response.send_modal(modal)
-
-    # Récupérer les derniers messages
-    messages = [message async for message in interaction.channel.history(limit=150)]
-    message_logs = "\n".join([f"{msg.author}: {msg.content}" for msg in reversed(messages)])
+    # Demander la raison de la fermeture
+    await interaction.response.send_message("📝 Veuillez entrer la raison de la fermeture du ticket :", ephemeral=True)
     
-    # Envoyer les logs
-    log_channel = bot.get_channel(LOG_CHANNEL_ID)
-    if log_channel:
+    def check(m):
+        return m.author == interaction.user and m.channel == interaction.channel
+    
+    try:
+        reason_message = await bot.wait_for("message", check=check, timeout=60.0)
+        reason = reason_message.content
+    except:
+        await interaction.followup.send("⏳ Temps écoulé. La fermeture du ticket a été annulée.", ephemeral=True)
+        return
+    
+    embed_closed = discord.Embed(
+        title="Ticket fermé",
+        description=f"🔒 Ce ticket a été fermé par {interaction.user.mention}\n📝 **Raison :** {reason}",
+        color=discord.Color.red()
+    )
+    
+    reopen_button = discord.ui.Button(label="🔄 Réouvrir", style=discord.ButtonStyle.green)
+    delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
+    
+    async def delete_callback(interaction: discord.Interaction):
+        if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
+            await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
+            return
+        
+        await interaction.response.send_message("📝 Veuillez entrer la raison de la suppression du ticket :", ephemeral=True)
+        try:
+            delete_reason_msg = await bot.wait_for("message", check=check, timeout=60.0)
+            delete_reason = delete_reason_msg.content
+        except:
+            await interaction.followup.send("⏳ Temps écoulé. La suppression du ticket a été annulée.", ephemeral=True)
+            return
+        
+        log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
+        messages = await interaction.channel.history(limit=150).flatten()
+        logs_text = "\n".join([f"{m.author}: {m.content}" for m in messages])
+        
         embed_logs = discord.Embed(
             title="Logs du Ticket",
-            description=f"Ticket fermé par {interaction.user.mention}\n**Raison :** En attente...",
+            description=f"📝 **Raison de suppression :** {delete_reason}\n📜 **150 derniers messages :**\n```
+{logs_text}```",
             color=discord.Color.dark_gray()
         )
-        embed_logs.add_field(name="Messages (150 derniers)", value=message_logs[:4000], inline=False)
+        
         await log_channel.send(embed=embed_logs)
-
-    button.callback = ticket_callback
-    view = discord.ui.View(timeout=None)
-    view.add_item(button)
-
-    embed_panel = discord.Embed(
-        title=panel_title,
-        description=panel_description,
-        color=discord.Color.blue()
-    )
-    embed_panel.set_image(url=panel_image)
-    embed_panel.set_footer(text="Cliquez sur le bouton ci-dessous pour ouvrir un ticket")
-
-    try:
-        await interaction.response.send_message(embed=embed_panel, view=view)
-    except discord.HTTPException:
-        await interaction.response.send_message("❌ Une erreur est survenue lors de l'envoi du message.", ephemeral=True)
+        await interaction.channel.delete()
+    
+    async def reopen_callback(interaction: discord.Interaction):
+        if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
+            await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
+            return
+        
+        await interaction.channel.set_permissions(interaction.guild.default_role, view_channel=False)
+        await interaction.channel.set_permissions(interaction.user, view_channel=True)
+        
+        embed_reopened = discord.Embed(
+            title="Ticket réouvert",
+            description=f"✅ Le ticket a été réouvert par {interaction.user.mention}",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=embed_reopened)
+    
+    reopen_button.callback = reopen_callback
+    delete_button.callback = delete_callback
+    
+    view_close = discord.ui.View(timeout=None)
+    view_close.add_item(reopen_button)
+    view_close.add_item(delete_button)
+    
+    await interaction.channel.send(embed=embed_closed)
+    await interaction.channel.send(embed=embed_closed, view=view_close)
 
 @bot.tree.command(name="transfer", description="Transférer un ticket à un autre staff")
 async def transfer(interaction: discord.Interaction, member: discord.Member):
