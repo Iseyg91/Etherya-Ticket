@@ -293,7 +293,7 @@ async def guide_command(interaction: discord.Interaction):
 STAFF_ROLE_ID = 1165936153418006548
 PANEL_ROLE_ID = 1170326040485318686  # Seul ce rôle peut utiliser /panel
 CATEGORY_ID = 1166091020472160466
-LOG_CHANNEL_ID = 1287176835062566932  # Salon où les logs seront envoyés
+LOG_CHANNEL_ID = 1287176835062566932
 
 @bot.tree.command(name="panel", description="Créer un ticket personnalisé")
 @app_commands.describe(
@@ -307,12 +307,15 @@ LOG_CHANNEL_ID = 1287176835062566932  # Salon où les logs seront envoyés
 )
 async def panel(interaction: discord.Interaction, panel_title: str, panel_description: str, panel_image: str,
                 ticket_title: str, ticket_description: str, ticket_image: str, emoji: str):
-    
+
     if PANEL_ROLE_ID not in [role.id for role in interaction.user.roles]:
         await interaction.response.send_message("❌ Vous n'avez pas la permission d'utiliser cette commande.", ephemeral=True)
         return
 
     button = discord.ui.Button(label="Ouvrir un ticket", style=discord.ButtonStyle.green)
+
+    claim_button = discord.ui.Button(label="📌 Claim", style=discord.ButtonStyle.blurple)
+    close_button = discord.ui.Button(label="❌ Fermer", style=discord.ButtonStyle.red)
 
     async def ticket_callback(interaction: discord.Interaction):
         category = discord.utils.get(interaction.guild.categories, id=CATEGORY_ID)
@@ -333,6 +336,11 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
             }
         )
 
+        try:
+            await interaction.user.send(f"✅ Votre ticket a été créé avec succès ! Vous pouvez le retrouver ici : {ticket_channel.mention}")
+        except discord.Forbidden:
+            await interaction.response.send_message("❌ Je ne peux pas vous envoyer de message privé.", ephemeral=True)
+
         embed_ticket = discord.Embed(
             title=ticket_title,
             description=ticket_description,
@@ -341,74 +349,84 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
         embed_ticket.set_footer(text=f"Ticket ouvert par {interaction.user.name}")
         embed_ticket.set_image(url=ticket_image)
 
-        claim_button = discord.ui.Button(label="📌 Claim", style=discord.ButtonStyle.blurple)
-        close_button = discord.ui.Button(label="❌ Fermer", style=discord.ButtonStyle.red)
-
-        ticket_data = {
-            "opener": interaction.user,
-            "claimed_by": None,
-            "messages": []
-        }
-
-        async def claim_callback(interaction: discord.Interaction):
-            if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
-                await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
-                return
-            
-            ticket_data["claimed_by"] = interaction.user
-            
-            embed_claim = discord.Embed(
-                title="Ticket en cours de traitement",
-                description=f"📌 Ce ticket sera traité par {interaction.user.mention}",
-                color=discord.Color.orange()
-            )
-            view_ticket.remove_item(claim_button)
-            await interaction.message.edit(view=view_ticket)
-            await interaction.response.send_message(embed=embed_claim)
-        
-        async def close_callback(interaction: discord.Interaction):
-            if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
-                await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
-                return
-
-            modal = discord.ui.Modal(title="Raison de la fermeture")
-            reason_input = discord.ui.TextInput(label="Raison", placeholder="Entrez la raison du close")
-            modal.add_item(reason_input)
-
-            async def modal_callback(interaction: discord.Interaction):
-                reason = reason_input.value
-                log_channel = bot.get_channel(LOG_CHANNEL_ID)
-                messages = [message async for message in interaction.channel.history(limit=150)]
-                messages.reverse()
-                messages_text = "\n".join([f"{msg.author}: {msg.content}" for msg in messages])
-                
-                embed_log = discord.Embed(
-                    title="Ticket Fermé",
-                    description=f"Ticket fermé par {interaction.user.mention}\n**Raison**: {reason}",
-                    color=discord.Color.red()
-                )
-                embed_log.add_field(name="Ouvert par", value=ticket_data["opener"].mention, inline=False)
-                embed_log.add_field(name="Claimé par", value=ticket_data["claimed_by"].mention if ticket_data["claimed_by"] else "Personne", inline=False)
-                embed_log.add_field(name="Messages", value=f"```{messages_text[:3900]}```", inline=False)
-                
-                await log_channel.send(embed=embed_log)
-                await interaction.channel.delete()
-            
-            modal.on_submit = modal_callback
-            await interaction.response.send_modal(modal)
-        
-        claim_button.callback = claim_callback
-        close_button.callback = close_callback
         view_ticket = discord.ui.View(timeout=None)
         view_ticket.add_item(claim_button)
         view_ticket.add_item(close_button)
 
         await ticket_channel.send(f"{interaction.user.mention} | {staff_role.mention}", embed=embed_ticket, view=view_ticket)
-    
+
+        async def claim_callback(interaction: discord.Interaction):
+            if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
+                await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
+                return
+
+            embed_claim = discord.Embed(
+                title="Ticket en cours de traitement",
+                description=f"📌 Ce ticket sera traité par {interaction.user.mention}",
+                color=discord.Color.orange()
+            )
+
+            await interaction.channel.set_permissions(interaction.guild.default_role, view_channel=False)
+            await interaction.channel.set_permissions(interaction.user, view_channel=True)
+            await interaction.channel.set_permissions(staff_role, view_channel=True)
+
+            view_ticket.remove_item(claim_button)
+            await interaction.message.edit(view=view_ticket)
+
+            await interaction.response.send_message(embed=embed_claim)
+
+        async def close_callback(interaction: discord.Interaction):
+            if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
+                await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
+                return
+
+            embed_closed = discord.Embed(
+                title="Ticket fermé",
+                description=f"🔒 Ce ticket a été fermé par {interaction.user.mention}",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed_closed)
+            
+            class CloseModal(discord.ui.Modal, title="Raison de la fermeture"):
+                reason = discord.ui.TextInput(label="Raison", style=discord.TextStyle.paragraph, required=True)
+
+                async def on_submit(self, interaction: discord.Interaction):
+                    embed_options = discord.Embed(
+                        title="Que souhaitez-vous faire ?",
+                        description="🔄 Réouvrir ou 🗑 Supprimer ?",
+                        color=discord.Color.orange()
+                    )
+                    reopen_button = discord.ui.Button(label="🔄 Réouvrir", style=discord.ButtonStyle.green)
+                    delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
+                    
+                    async def delete_callback(interaction: discord.Interaction):
+                        class DeleteModal(discord.ui.Modal, title="Raison de la suppression"):
+                            reason = discord.ui.TextInput(label="Pourquoi supprimer ?", style=discord.TextStyle.paragraph, required=True)
+
+                            async def on_submit(self, interaction: discord.Interaction):
+                                await interaction.response.send_message("🗑 Suppression du ticket en cours...")
+                                await interaction.channel.delete()
+
+                        await interaction.response.send_modal(DeleteModal())
+
+                    reopen_button.callback = lambda i: i.response.send_message("✅ Ticket réouvert !", ephemeral=True)
+                    delete_button.callback = delete_callback
+                    
+                    view_options = discord.ui.View()
+                    view_options.add_item(reopen_button)
+                    view_options.add_item(delete_button)
+
+                    await interaction.response.send_message(embed=embed_options, view=view_options)
+
+            await interaction.response.send_modal(CloseModal())
+
+        claim_button.callback = claim_callback
+        close_button.callback = close_callback
+
     button.callback = ticket_callback
     view = discord.ui.View(timeout=None)
     view.add_item(button)
-    
+
     embed_panel = discord.Embed(
         title=panel_title,
         description=panel_description,
@@ -416,8 +434,11 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
     )
     embed_panel.set_image(url=panel_image)
     embed_panel.set_footer(text="Cliquez sur le bouton ci-dessous pour ouvrir un ticket")
-    
-    await interaction.response.send_message(embed=embed_panel, view=view)
+
+    try:
+        await interaction.response.send_message(embed=embed_panel, view=view)
+    except discord.HTTPException:
+        await interaction.response.send_message("❌ Une erreur est survenue lors de l'envoi du message.", ephemeral=True)
 
 @bot.tree.command(name="transfer", description="Transférer un ticket à un autre staff")
 async def transfer(interaction: discord.Interaction, member: discord.Member):
