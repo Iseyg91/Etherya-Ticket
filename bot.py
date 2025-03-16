@@ -387,41 +387,67 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
             )
             await interaction.response.send_message(embed=embed_closed)
             
-            class CloseModal(discord.ui.Modal, title="Raison de la fermeture"):
-                reason = discord.ui.TextInput(label="Raison", style=discord.TextStyle.paragraph, required=True)
+class CloseTicketModal(discord.ui.Modal, title="Raison de la fermeture"):
+    reason = discord.ui.TextInput(label="Pourquoi fermez-vous ce ticket ?", style=discord.TextStyle.long)
 
-                async def on_submit(self, interaction: discord.Interaction):
-                    embed_options = discord.Embed(
-                        title="Que souhaitez-vous faire ?",
-                        description="🔄 Réouvrir ou 🗑 Supprimer ?",
-                        color=discord.Color.orange()
-                    )
-                    reopen_button = discord.ui.Button(label="🔄 Réouvrir", style=discord.ButtonStyle.green)
-                    delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
-                    
-                    async def delete_callback(interaction: discord.Interaction):
-                        class DeleteModal(discord.ui.Modal, title="Raison de la suppression"):
-                            reason = discord.ui.TextInput(label="Pourquoi supprimer ?", style=discord.TextStyle.paragraph, required=True)
+    async def on_submit(self, interaction: discord.Interaction):
+        embed_closed = discord.Embed(
+            title="Ticket fermé",
+            description=f"🔒 Ce ticket a été fermé par {interaction.user.mention}\n\n**Raison :** {self.reason.value}",
+            color=discord.Color.red()
+        )
+        await interaction.response.send_message(embed=embed_closed)
 
-                            async def on_submit(self, interaction: discord.Interaction):
-                                await interaction.response.send_message("🗑 Suppression du ticket en cours...")
-                                await interaction.channel.delete()
+        # Envoyer l'embed avec les boutons Supprimer/Réouvrir
+        view = discord.ui.View()
+        reopen_button = discord.ui.Button(label="🔄 Réouvrir", style=discord.ButtonStyle.green)
+        delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
 
-                        await interaction.response.send_modal(DeleteModal())
+        async def reopen_callback(interaction: discord.Interaction):
+            await interaction.channel.set_permissions(interaction.guild.default_role, view_channel=False)
+            await interaction.channel.set_permissions(STAFF_ROLE_ID, view_channel=True)
+            embed_reopened = discord.Embed(
+                title="Ticket réouvert",
+                description=f"✅ Le ticket a été réouvert par {interaction.user.mention}",
+                color=discord.Color.green()
+            )
+            await interaction.response.send_message(embed=embed_reopened)
 
-                    reopen_button.callback = lambda i: i.response.send_message("✅ Ticket réouvert !", ephemeral=True)
-                    delete_button.callback = delete_callback
-                    
-                    view_options = discord.ui.View()
-                    view_options.add_item(reopen_button)
-                    view_options.add_item(delete_button)
+        async def delete_callback(interaction: discord.Interaction):
+            modal = CloseTicketModal(title="Raison de la suppression")
+            await interaction.response.send_modal(modal)
+            await interaction.channel.delete()
 
-                    await interaction.response.send_message(embed=embed_options, view=view_options)
+        reopen_button.callback = reopen_callback
+        delete_button.callback = delete_callback
 
-            await interaction.response.send_modal(CloseModal())
+        view.add_item(reopen_button)
+        view.add_item(delete_button)
+        await interaction.channel.send(embed=embed_closed, view=view)
 
-        claim_button.callback = claim_callback
-        close_button.callback = close_callback
+@bot.tree.command(name="close_ticket", description="Fermer un ticket")
+async def close_ticket(interaction: discord.Interaction):
+    if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
+        await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
+        return
+    
+    modal = CloseTicketModal()
+    await interaction.response.send_modal(modal)
+
+    # Récupérer les derniers messages
+    messages = [message async for message in interaction.channel.history(limit=150)]
+    message_logs = "\n".join([f"{msg.author}: {msg.content}" for msg in reversed(messages)])
+    
+    # Envoyer les logs
+    log_channel = bot.get_channel(LOG_CHANNEL_ID)
+    if log_channel:
+        embed_logs = discord.Embed(
+            title="Logs du Ticket",
+            description=f"Ticket fermé par {interaction.user.mention}\n**Raison :** En attente...",
+            color=discord.Color.dark_gray()
+        )
+        embed_logs.add_field(name="Messages (150 derniers)", value=message_logs[:4000], inline=False)
+        await log_channel.send(embed=embed_logs)
 
     button.callback = ticket_callback
     view = discord.ui.View(timeout=None)
