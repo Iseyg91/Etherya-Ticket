@@ -423,13 +423,13 @@ async def delete_callback(interaction: discord.Interaction):
     await log_channel.send(embed=embed_logs)
     await interaction.channel.delete()
                     
-                    reopen_button.callback = reopen_callback
-                    delete_button.callback = delete_callback
-                    view.add_item(reopen_button)
-                    view.add_item(delete_button)
-                    await interaction.channel.send(embed=embed_closed, view=view)
+    reopen_button.callback = reopen_callback
+    delete_button.callback = delete_callback
+    view.add_item(reopen_button)
+    view.add_item(delete_button)
+    await interaction.channel.send(embed=embed_closed, view=view)
             
-            await interaction.response.send_modal(CloseTicketModal())
+    await interaction.response.send_modal(CloseTicketModal())
 
         claim_button.callback = claim_callback
         close_button.callback = close_callback
