@@ -407,9 +407,14 @@ async def delete_callback(interaction: discord.Interaction):
         async def on_submit(self, interaction: discord.Interaction):
             log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
             messages = []
-            async for message in interaction.channel.history(limit=150):
+            async for message in interaction.channel.history(limit=50):  # Limité à 50 messages pour plus de performance
                 messages.append(f"{message.author}: {message.content}")
+            
             logs_text = "\n".join(messages)
+            
+            # Si les logs dépassent 4000 caractères (limite de Discord), on les coupe
+            if len(logs_text) > 4000:
+                logs_text = logs_text[:4000]
 
             embed_logs = discord.Embed(
                 title="Logs du Ticket",
@@ -417,7 +422,7 @@ async def delete_callback(interaction: discord.Interaction):
                     f"📝 **Raison de suppression :** {self.reason.value}\n"
                     f"👤 **Ticket fermé par :** {interaction.user}\n"
                     f"📅 **Date de fermeture :** {interaction.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    f"📜 **150 derniers messages :**\n```\n{logs_text}\n```"
+                    f"📜 **Derniers messages :**\n```\n{logs_text}\n```"
                 ),
                 color=discord.Color.dark_gray()
             )
