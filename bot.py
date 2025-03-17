@@ -367,26 +367,48 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
                 await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
                 return
             
-            class DeleteTicketModal(discord.ui.Modal, title="Suppression du Ticket"):
-                reason = discord.ui.TextInput(label="Raison de la suppression", style=discord.TextStyle.long)
+            embed_closed = discord.Embed(
+                title="Ticket fermé",
+                description="Ce ticket a été fermé. Vous pouvez le rouvrir ou le supprimer.",
+                color=discord.Color.red()
+            )
+            
+            view_close = discord.ui.View()
+            reopen_button = discord.ui.Button(label="🔓 Rouvrir", style=discord.ButtonStyle.green)
+            delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
 
-                async def on_submit(self, interaction: discord.Interaction):
-                    log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
-                    messages = []
-                    async for message in interaction.channel.history(limit=150):
-                        messages.append(f"{message.author}: {message.content}")
-                    logs_text = "\n".join(messages)
+            async def reopen_callback(interaction: discord.Interaction):
+                await interaction.channel.set_permissions(interaction.user, view_channel=True)
+                await interaction.response.send_message("✅ Ticket rouvert avec succès !", ephemeral=True)
 
-                    embed_logs = discord.Embed(
-                        title="Logs du Ticket",
-                        description=f"📝 **Raison de suppression :** {self.reason.value}\n📜 **150 derniers messages :**\n```\n{logs_text}\n```",
-                        color=discord.Color.dark_gray()
-                    )
-                    
-                    await log_channel.send(embed=embed_logs)
-                    await interaction.channel.delete()
+            async def delete_callback(interaction: discord.Interaction):
+                class DeleteTicketModal(discord.ui.Modal, title="Suppression du Ticket"):
+                    reason = discord.ui.TextInput(label="Raison de la suppression", style=discord.TextStyle.long)
 
-            await interaction.response.send_modal(DeleteTicketModal())
+                    async def on_submit(self, interaction: discord.Interaction):
+                        log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
+                        messages = []
+                        async for message in interaction.channel.history(limit=150):
+                            messages.append(f"{message.author}: {message.content}")
+                        logs_text = "\n".join(messages)
+
+                        embed_logs = discord.Embed(
+                            title="Logs du Ticket",
+                            description=f"📝 **Raison de suppression :** {self.reason.value}\n📜 **150 derniers messages :**\n```\n{logs_text}\n```",
+                            color=discord.Color.dark_gray()
+                        )
+                        
+                        await log_channel.send(embed=embed_logs)
+                        await interaction.channel.delete()
+
+                await interaction.response.send_modal(DeleteTicketModal())
+            
+            reopen_button.callback = reopen_callback
+            delete_button.callback = delete_callback
+            view_close.add_item(reopen_button)
+            view_close.add_item(delete_button)
+            
+            await interaction.response.send_message(embed=embed_closed, view=view_close)
 
         claim_button.callback = claim_callback
         close_button.callback = close_callback
