@@ -367,64 +367,27 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
                 await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
                 return
             
-            embed_closed = discord.Embed(
-                title="Ticket fermé",
-                description=f"🔒 Ce ticket a été fermé par {interaction.user.mention}",
-                color=discord.Color.red()
-            )
+            class DeleteTicketModal(discord.ui.Modal, title="Suppression du Ticket"):
+                reason = discord.ui.TextInput(label="Raison de la suppression", style=discord.TextStyle.long)
 
-            view = discord.ui.View()
-            reopen_button = discord.ui.Button(label="🔄 Réouvrir", style=discord.ButtonStyle.green)
-            delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
-            
-            async def reopen_callback(interaction: discord.Interaction):
-                await interaction.channel.set_permissions(interaction.guild.default_role, view_channel=False)
-                await interaction.channel.set_permissions(staff_role, view_channel=True)
-                embed_reopened = discord.Embed(
-                    title="Ticket réouvert",
-                    description=f"✅ Le ticket a été réouvert par {interaction.user.mention}",
-                    color=discord.Color.green()
-                )
-                await interaction.response.send_message(embed=embed_reopened)
+                async def on_submit(self, interaction: discord.Interaction):
+                    log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
+                    messages = []
+                    async for message in interaction.channel.history(limit=150):
+                        messages.append(f"{message.author}: {message.content}")
+                    logs_text = "\n".join(messages)
 
-            async def delete_callback(interaction: discord.Interaction):
-                if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
-                    await interaction.response.send_message("❌ Vous n'avez pas la permission d'exécuter cette action.", ephemeral=True)
-                    return
-                
-                await interaction.response.send_message("📝 Veuillez entrer la raison de la suppression du ticket :", ephemeral=True)
-                
-                def check(msg):
-                    return msg.author == interaction.user and msg.channel == interaction.channel
-                
-                try:
-                    delete_reason_msg = await bot.wait_for("message", check=check, timeout=60.0)
-                    delete_reason = delete_reason_msg.content
-                except asyncio.TimeoutError:
-                    await interaction.followup.send("⏳ Temps écoulé. La suppression du ticket a été annulée.", ephemeral=True)
-                    return
-                
-                log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
-                messages = []
-                async for message in interaction.channel.history(limit=150):
-                    messages.append(f"{message.author}: {message.content}")
-                
-                logs_text = "\n".join(messages)
-                embed_logs = discord.Embed(
-                    title="Logs du Ticket",
-                    description=f"📝 **Raison de suppression :** {delete_reason}\n📜 **150 derniers messages :**\n```\n{logs_text}\n```",
-                    color=discord.Color.dark_gray()
-                )
-                
-                await log_channel.send(embed=embed_logs)
-                await interaction.channel.delete()
+                    embed_logs = discord.Embed(
+                        title="Logs du Ticket",
+                        description=f"📝 **Raison de suppression :** {self.reason.value}\n📜 **150 derniers messages :**\n```\n{logs_text}\n```",
+                        color=discord.Color.dark_gray()
+                    )
+                    
+                    await log_channel.send(embed=embed_logs)
+                    await interaction.channel.delete()
 
-            reopen_button.callback = reopen_callback
-            delete_button.callback = delete_callback
-            view.add_item(reopen_button)
-            view.add_item(delete_button)
-            await interaction.channel.send(embed=embed_closed, view=view)
-            
+            await interaction.response.send_modal(DeleteTicketModal())
+
         claim_button.callback = claim_callback
         close_button.callback = close_callback
         view_ticket.add_item(claim_button)
