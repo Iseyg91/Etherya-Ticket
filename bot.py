@@ -377,22 +377,14 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
                 return
             
             embed_closed = discord.Embed(
-                title="🔒 Ticket Fermé",
-                description=f"Ce ticket a été fermé par {interaction.user.mention}",
+                title="Ticket fermé",
+                description="Ce ticket a été fermé. Vous pouvez le rouvrir ou le supprimer.",
                 color=discord.Color.red()
             )
-            await interaction.channel.send(embed=embed_closed)
-            await interaction.channel.set_permissions(interaction.user, view_channel=False)
             
-            embed_options = discord.Embed(
-                title="Actions Disponibles",
-                description="Vous pouvez réouvrir ou supprimer ce ticket.",
-                color=discord.Color.dark_gray()
-            )
-
-            view_options = discord.ui.View()
-            reopen_button = discord.ui.Button(label="🔓 Réouvrir", style=discord.ButtonStyle.green)
-            delete_button = discord.ui.Button(label="🗑️ Supprimer", style=discord.ButtonStyle.red)
+            view_close = discord.ui.View()
+            reopen_button = discord.ui.Button(label="🔓 Rouvrir", style=discord.ButtonStyle.green)
+            delete_button = discord.ui.Button(label="🗑 Supprimer", style=discord.ButtonStyle.gray)
 
             async def reopen_callback(interaction: discord.Interaction):
                 if STAFF_ROLE_ID not in [role.id for role in interaction.user.roles]:
