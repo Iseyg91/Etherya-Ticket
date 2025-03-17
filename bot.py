@@ -292,7 +292,7 @@ async def guide_command(interaction: discord.Interaction):
 # IDs des rôles et du salon de logs
 STAFF_ROLE_ID = 1165936153418006548
 PANEL_ROLE_ID = 1170326040485318686  # Seul ce rôle peut utiliser /panel
-LOG_CHANNEL_ID = 123456789012345678  # Remplace par l'ID du salon de logs
+LOG_CHANNEL_ID = 1287176835062566932  # Remplace par l'ID du salon de logs
 
 @bot.tree.command(name="panel", description="Créer un ticket personnalisé")
 @app_commands.describe(
