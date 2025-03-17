@@ -413,9 +413,8 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
 
                         embed_logs = discord.Embed(
                             title="Logs du Ticket",
-                            description=f"📝 **Raison de suppression :** {self.reason.value}\n📜 **150 derniers messages :**\n
-\n{logs_text}\n
-",
+                            description=f"📝 **Raison de suppression :** {self.reason.value}\n📜 **150 derniers messages :**\n\n{logs_text}",
+
                             color=discord.Color.dark_gray()
                         )
                         
