@@ -417,41 +417,30 @@ async def delete_callback(interaction: discord.Interaction):
         reason = discord.ui.TextInput(label="Raison de la suppression", style=discord.TextStyle.long)
 
         async def on_submit(self, interaction: discord.Interaction):
-            # Récupère le salon de logs
             log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
             if log_channel:
-                # Informations sur le ticket
                 ticket_channel = interaction.channel
-                ticket_id = ticket_channel.name.split("-")[1]  # Assumant que le nom du ticket est comme "ticket-1", "ticket-2", etc.
-                created_at = ticket_channel.created_at.strftime("%d/%m/%Y %H:%M:%S")
+                ticket_name = ticket_channel.name
+                opener = ticket_channel.topic.split("Ouvert par: ")[1] if ticket_channel.topic else "Inconnu"
+                closer = interaction.user.mention
                 
-                # Récupère les derniers 200 messages du ticket
-                messages = await ticket_channel.history(limit=200).flatten()
-                messages_content = "\n".join([message.content for message in messages if message.content])  # Contenu des messages non vides
+                messages = await ticket_channel.history(limit=150).flatten()
+                messages_content = "\n".join([f"{msg.author}: {msg.content}" for msg in messages if msg.content])
                 
-                # Récupère les utilisateurs qui ont parlé
-                users = set(message.author.mention for message in messages)
-
                 embed_log = discord.Embed(
-                    title="🔒 Ticket Supprimé",
-                    description=f"**Ticket ID:** {ticket_id}\n"
-                                f"**Ouvert par:** {ticket_channel.created_by.mention}\n"
-                                f"**Fermé par:** {interaction.user.mention}\n"
-                                f"**Supprimé par:** {interaction.user.mention}\n"
-                                f"**Date d'ouverture:** {created_at}\n"
-                                f"**Nom du ticket:** {ticket_channel.name}\n"
-                                f"**Traité par:** {ticket_channel.claimed_by.mention if hasattr(ticket_channel, 'claimed_by') else 'Non attribué'}\n"
-                                f"**Raison de la fermeture:** {self.reason.value}\n"
-                                f"**Utilisateurs ayant parlé:** {' '.join(users) if users else 'Aucun'}",
+                    title="🔒 Ticket Fermé",
                     color=discord.Color.dark_red()
                 )
-                # Ajouter les messages dans l'embed
-                embed_log.add_field(name="Derniers messages du ticket", value=messages_content[:1024], inline=False)
-
-                # Envoie l'embed dans le salon de logs
+                embed_log.add_field(name="🎫 Nom du ticket", value=ticket_name, inline=False)
+                embed_log.add_field(name="👤 Ouvert par", value=opener, inline=True)
+                embed_log.add_field(name="🔒 Fermé par", value=closer, inline=True)
+                embed_log.add_field(name="📌 Raison", value=self.reason.value, inline=False)
+                
+                if messages_content:
+                    embed_log.add_field(name="💬 Derniers messages", value=messages_content[:1024], inline=False)
+                
                 await log_channel.send(embed=embed_log)
-
-            # Supprime le ticket après envoi du log
+            
             await interaction.channel.delete()
     
     await interaction.response.send_modal(DeleteTicketModal())
@@ -478,6 +467,7 @@ async def delete_callback(interaction: discord.Interaction):
     )
     embed_panel.set_image(url=panel_image)
     await interaction.response.send_message(embed=embed_panel, view=view)
+    
 @bot.tree.command(name="close", description="Fermer un ticket")
 async def close(interaction: discord.Interaction):
     # Vérifier que la commande est utilisée dans un ticket
