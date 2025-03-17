@@ -426,7 +426,7 @@ async def delete_callback(interaction: discord.Interaction):
                 created_at = ticket_channel.created_at.strftime("%d/%m/%Y %H:%M:%S")
                 
                 # Récupère les derniers 200 messages du ticket
-                messages = await ticket_channel.history(limit=200).flatten()
+                messages = await ticket_channel.history(limit=150).flatten()
                 messages_content = "\n".join([message.content for message in messages if message.content])  # Contenu des messages non vides
                 
                 # Récupère les utilisateurs qui ont parlé
