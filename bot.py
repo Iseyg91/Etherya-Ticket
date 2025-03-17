@@ -400,37 +400,53 @@ async def panel(interaction: discord.Interaction, panel_title: str, panel_descri
                 await interaction.response.send_message(embed=embed_reopened)
                 await interaction.message.delete()
 
-async def delete_callback(interaction: discord.Interaction):
-    class DeleteTicketModal(discord.ui.Modal, title="Suppression du Ticket"):
-        reason = discord.ui.TextInput(label="Raison de la suppression", style=discord.TextStyle.long)
+            async def delete_callback(interaction: discord.Interaction):
+                class DeleteTicketModal(discord.ui.Modal, title="Suppression du Ticket"):
+                    reason = discord.ui.TextInput(label="Raison de la suppression", style=discord.TextStyle.long)
 
-        async def on_submit(self, interaction: discord.Interaction):
-            log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
-            messages = []
-            async for message in interaction.channel.history(limit=50):  # Limité à 50 messages pour plus de performance
-                messages.append(f"{message.author}: {message.content}")
-            
-            logs_text = "\n".join(messages)
-            
-            # Si les logs dépassent 4000 caractères (limite de Discord), on les coupe
-            if len(logs_text) > 4000:
-                logs_text = logs_text[:4000]
+                    async def on_submit(self, interaction: discord.Interaction):
+                        log_channel = interaction.guild.get_channel(LOG_CHANNEL_ID)
+                        messages = []
+                        async for message in interaction.channel.history(limit=150):
+                            messages.append(f"{message.author}: {message.content}")
+                        logs_text = "\n".join(messages)
 
-            embed_logs = discord.Embed(
-                title="Logs du Ticket",
-                description=(
-                    f"📝 **Raison de suppression :** {self.reason.value}\n"
-                    f"👤 **Ticket fermé par :** {interaction.user}\n"
-                    f"📅 **Date de fermeture :** {interaction.created_at.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                    f"📜 **Derniers messages :**\n```\n{logs_text}\n```"
-                ),
-                color=discord.Color.dark_gray()
-            )
-            
-            await log_channel.send(embed=embed_logs)
-            await interaction.channel.delete()
+                        embed_logs = discord.Embed(
+                            title="Logs du Ticket",
+                            description=f"📝 **Raison de suppression :** {self.reason.value}\n📜 **150 derniers messages :**\n
+\n{logs_text}\n
+",
+                            color=discord.Color.dark_gray()
+                        )
+                        
+                        await log_channel.send(embed=embed_logs)
+                        await interaction.channel.delete()
 
-    await interaction.response.send_modal(DeleteTicketModal())
+                await interaction.response.send_modal(DeleteTicketModal())
+            
+            reopen_button.callback = reopen_callback
+            delete_button.callback = delete_callback
+            view_close.add_item(reopen_button)
+            view_close.add_item(delete_button)
+            
+            await interaction.response.send_message(embed=embed_closed, view=view_close)
+
+        claim_button.callback = claim_callback
+        close_button.callback = close_callback
+        view_ticket.add_item(claim_button)
+        view_ticket.add_item(close_button)
+
+        await ticket_channel.send(f"{interaction.user.mention} | {staff_role.mention}", embed=embed_ticket, view=view_ticket)
+        await interaction.response.send_message(f"✅ Ticket créé avec succès ! {ticket_channel.mention}", ephemeral=True)
+
+    button.callback = ticket_callback
+    embed_panel = discord.Embed(
+        title=panel_title,
+        description=panel_description,
+        color=discord.Color.blue()
+    )
+    embed_panel.set_image(url=panel_image)
+    await interaction.response.send_message(embed=embed_panel, view=view)
 
 @bot.tree.command(name="close", description="Fermer un ticket")
 async def close(interaction: discord.Interaction):
