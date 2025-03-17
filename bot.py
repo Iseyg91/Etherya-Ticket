@@ -477,8 +477,8 @@ async def delete_callback(interaction: discord.Interaction):
         color=discord.Color.blue()
     )
     embed_panel.set_image(url=panel_image)
-await interaction.response.defer()  # Indique que la réponse est en cours de traitement
-await interaction.followup.send(embed=embed_panel, view=view)  # Envoie la réponse après le defer
+    await interaction.response.defer()  # Indique que la réponse est en cours de traitement
+    await interaction.followup.send(embed=embed_panel, view=view)  # Envoie la réponse après le defer
 
 @bot.tree.command(name="close", description="Fermer un ticket")
 async def close(interaction: discord.Interaction):
